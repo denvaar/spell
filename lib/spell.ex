@@ -18,7 +18,7 @@ defmodule Spell do
     )
   end
 
-  def load_words_concurrent(path) do
+  def load_words_async(path) do
     root = %Trie{letter: nil, children: %{}, terminal: false}
     # read file and format contents
     {:ok, content} = File.read(path)
@@ -33,7 +33,8 @@ defmodule Spell do
       Task.async(fn -> insert_many(bucket_of_words, nil) end)
     end)
     |> Enum.reduce(root, fn task, trie ->
-      %{trie | children: Map.merge(trie.children, Map.get(Task.await(task), :children))}
+      sub_trie = Task.await(task)
+      %{trie | children: Map.merge(trie.children, sub_trie.children)}
     end)
   end
 
